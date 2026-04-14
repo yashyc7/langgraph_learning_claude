@@ -96,3 +96,9 @@ main()
 
 
 
+# Alas you have failed
+# {'score': 23, 'output_node': 'fail', 'message': ['Alas you have Poor Score']}
+# uhmm You have average score
+# {'score': 65, 'output_node': 'pass', 'message': ['Hi you have Average Score']}
+# Wow you have Outstanding Results
+# {'score': 91, 'output_node': 'excellent', 'message': ['Great you have excellent Score']}
