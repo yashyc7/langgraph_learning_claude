@@ -1,0 +1,83 @@
+State is the heart of LangGraph. Master this, everything else becomes easy.
+
+-------------------------------------------------
+
+1. TypedDict State Schema
+State is always a TypedDict. Every node reads from it, every node writes back to it.
+
+from typing import TypedDict
+
+class State(TypedDict):
+    name: str
+    age: int
+    messages: list[str]
+
+Rules:
+
+Every key must be typed
+Nodes return only the keys they changed
+LangGraph merges the return into the full state automatically
+
+-------------------------------------------------
+
+2. How State Updates Work — The Merge Behavior
+This is the most important thing to understand:
+
+# Current state:
+{"name": "Yash", "age": 25, "messages": ["hello"]}
+
+# Node returns only what it changed:
+return {"age": 26}
+
+# LangGraph merges → new state:
+{"name": "Yash", "age": 26, "messages": ["hello"]}
+
+But lists have a problem:
+
+# Current state:
+{"messages": ["hello"]}
+
+# Node returns:
+return {"messages": ["world"]}
+
+# Result — OVERWRITES, not appends:
+{"messages": ["world"]}  # ❌ "hello" is gone
+This is why we need reducers.
+-------------------------------------------------
+
+3. Reducers — Controlling How State Updates
+A reducer tells LangGraph how to merge a specific field.
+
+from typing import TypedDict
+from operator import add 
+
+class State(TypedDict):
+    messages: Annotated[list[str],add]
+    
+    # add = append , not overwrite 
+
+
+Now when a node returns {"messages": ["world"]}:
+
+# Before: {"messages": ["hello"]} # which was wrong 
+# After:  {"messages": ["hello", "world"]}  ✅ appended
+
+add is the built-in reducer for lists — it concatenates them.
+
+
+-------------------------------------------------
+
+4. Custom Reducers
+You can write your own reducer for any custom merge logic:
+
+def keep_unique(existing:list,new:list)->list:
+    return list(set(existing+new)) #no duplicates
+
+
+class State(TypedDict):
+    tags:Annotated[list[str],keep_unique]
+
+
+A reducer is just a function: (existing_value, new_value) -> merged_value
+
+-------------------------------------------------

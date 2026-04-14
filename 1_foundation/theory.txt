@@ -1,0 +1,27 @@
+1. What is LangGraph & Why it Exists?
+LangGraph is a library for building stateful, multi-step AI applications as graphs.
+Why not just LangChain?
+LangChain  → linear chains (A → B → C)  — no loops, no branching
+LangGraph  → graphs (A → B → C → back to A if needed)  — full control
+Real agents need loops, decisions, memory — LangGraph handles all of that.
+---------------------------------------------------------------------------
+2. The Mental Model — Graph, Nodes, Edges
+Think of it exactly like a flowchart:
+[Node A] ──edge──► [Node B] ──edge──► [Node C]
+                       │
+                  conditional
+                       │
+                   [Node D]
+
+Node = a Python function that does work
+Edge = connection between nodes (the flow)
+Conditional Edge = a decision point (if/else routing)
+State = shared data that flows through every node
+---------------------------------------------------------------------------
+3. State — The Backbone of Everything
+State is a Python dict that every node reads from and writes to.
+Node A reads state → does work → updates state → Node B gets updated state
+Every node receives the full state and returns only what it changed. That's it.
+---------------------------------------------------------------------------
+
+
