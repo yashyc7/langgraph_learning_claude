@@ -1,0 +1,59 @@
+This is where graphs get powerful. You control where the flow goes based on logic.
+--------------------------------------------
+
+1. Normal Edges
+You already know these — fixed, unconditional connections:
+
+graph.add_edge("node_a", "node_b")  # always goes A → B
+
+--------------------------------------------
+
+2. Conditional Edges
+The real power. Route to different nodes based on state:
+
+graph.add_conditional_edges(
+    "node_a",        # from this node
+    routing_function, # call this function to decide
+    {
+        "route_x": "node_x",  # if function returns "route_x" → go to node_x
+        "route_y": "node_y",  # if function returns "route_y" → go to node_y
+    }
+)
+
+The routing function receives state and returns a string key: 
+
+def routing_function(state: State) -> str:
+    if state["score"] > 50:
+        return "route_x"
+    return "route_y"
+
+--------------------------------------------
+3. Entry & Finish Points
+
+graph.add_edge(START, "first_node")   # entry — where graph begins
+graph.add_edge("last_node", END)      # exit — where graph ends
+
+# Multiple nodes can route to END
+graph.add_edge("node_x", END)
+graph.add_edge("node_y", END)
+
+--------------------------------------------
+
+4. The Full Picture
+
+          START
+            │
+        [classify]
+            │
+     ┌──────┴──────┐
+     ▼             ▼
+ [positive]    [negative]
+     │             │
+     ▼             ▼
+  [cheer]      [console]
+     │             │
+     └──────┬──────┘
+            ▼
+           END
+
+This is exactly what we're building.
