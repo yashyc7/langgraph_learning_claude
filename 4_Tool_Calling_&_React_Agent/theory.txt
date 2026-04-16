@@ -1,0 +1,67 @@
+1. What is a ReAct Agent?
+ReAct = Reason + Act loop:
+
+User Query
+    │
+    ▼
+[LLM thinks] → "I need to use a tool"
+    │
+    ▼
+[Tool runs] → returns result
+    │
+    ▼
+[LLM thinks again] → "I have enough info now"
+    │
+    ▼
+Final Answer
+
+
+The LLM keeps looping until it decides it has enough information. That loop is the graph.
+
+_______________________________________________________
+2. How Tool Calling Works
+pythonfrom langchain_core.tools import tool
+
+@tool
+def get_weather(city: str) -> str:
+    """Get the weather for a city."""  # ← LLM reads this docstring!
+    return f"Weather in {city}: Sunny, 25°C"
+
+
+Then bind it to the LLM:
+pythonfrom langchain_openai import ChatOpenAI
+
+llm = ChatOpenAI(model="gpt-4o-mini")
+llm_with_tools = llm.bind_tools([get_weather])
+
+_______________________________________________________
+
+3. ToolNode — The Executor
+ToolNode is a built-in LangGraph node that:
+
+Receives the LLM's tool call request
+Executes the actual tool function
+Returns the result back into state
+
+pythonfrom langgraph.prebuilt import ToolNode
+
+tool_node = ToolNode([get_weather, calculator])
+_______________________________________________________
+4. The ReAct Loop as a Graph
+START
+  │
+  ▼
+[agent node]  ← LLM decides: call tool OR answer
+  │
+  ▼ (conditional)
+  ├── "tools"  → [tool node] → back to [agent node]
+  └── "end"    → END
+The key is the loop — tool node goes back to agent node, not to END.
+_______________________________________________________
+5. MessagesState — Built-in State for Agents
+LangGraph ships a built-in state for message-based agents:
+pythonfrom langgraph.graph import MessagesState
+# equivalent to:
+class MessagesState(TypedDict):
+    messages: Annotated[list[AnyMessage], add_messages]
+add_messages is a smart reducer — handles message IDs, deduplication, and ordering automatically. Use this for all agent work.
