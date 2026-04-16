@@ -5,10 +5,10 @@
 import os
 from langchain_ollama import ChatOllama
 from langchain_core.tools import tool
-from langchain_core.messages import HumanMessage
+from langchain_core.messages import AIMessage, HumanMessage
 from langgraph.graph import StateGraph, START, END, MessagesState
 from langgraph.prebuilt import ToolNode
-
+from langgraph.graph.state import CompiledStateGraph
 
 # ── 1. DEFINE TOOLS ───────────────────────
 # Docstring is critical — LLM uses it to decide when to call the tool
@@ -67,17 +67,17 @@ tool_node = ToolNode(tools)
 # ── 4. ROUTING FUNCTION ───────────────────
 
 def should_continue(state: MessagesState) -> str:
-    """Check if LLM wants to call a tool or is done."""
-    last_message = state["messages"][-1]
+    last_msg = state["messages"][-1]
 
-    if last_message.tool_calls:   # LLM requested a tool
+    if isinstance(last_msg, AIMessage) and getattr(last_msg, "tool_calls", None):
         return "tools"
-    return "end"                  # LLM gave final answer
+
+    return "end"             # LLM gave final answer
 
 
 # ── 5. BUILD GRAPH ────────────────────────
 
-def build_graph() -> StateGraph:
+def build_graph() -> CompiledStateGraph:
     graph = StateGraph(MessagesState)
 
     graph.add_node("agent", agent_node)

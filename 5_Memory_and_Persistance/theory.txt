@@ -1,0 +1,59 @@
+1. The Problem without Memory . 
+Every invoke() starts completely fresh : 
+
+app.invoke({"messages": [HumanMessage("My name is Yash")]})
+app.invoke({"messages": [HumanMessage("What is my name?")]})
+# → "I don't know your name" ❌
+We need a checkpointer to fix this. 
+check pointer is something like we save information for our future chats 
+
+------------------------------------------------------
+
+2. Types of Checkpointer
+
+a. Memory Saver - > it cant survives restart because it saves the data in memory (ram)- > can be used for dev and testing 
+
+b. sqlite Saver ->it can survives restart because it saves the data in the disk (db) -> can be used for the real apps
+
+from langgraph.checkpoint.memory import MemorySaver
+from langgraph.checkpoint.sqlite import SqliteSaver
+
+memory = MemorySaver()                          # RAM only
+db     = SqliteSaver.from_conn_string("db.sqlite")  # disk
+
+Attach to graph at compile time like this
+graph.compile(checkpointer= memory // db ) # memory or db as per your need
+
+
+------------------------------------------------------
+3 . Threads - Isolated conversions
+user_a = {"configurable": {"thread_id": "user-a"}}
+user_b = {"configurable": {"thread_id": "user-b"}}
+
+# user-a tells their name
+app.invoke({"messages": [HumanMessage("I am Yash")]}, config=user_a)
+
+# user-a asks — remembers ✅
+app.invoke({"messages": [HumanMessage("Who am I?")]}, config=user_a)
+
+# user-b asks — no memory ✅
+app.invoke({"messages": [HumanMessage("Who am I?")]}, config=user_b)
+------------------------------------------------------
+
+4. Human-in-the-Loop — Interrupts
+Pause the graph before a node runs, wait for human approval, then resume:
+
+
+ Pause before "tools" node
+graph.compile(checkpointer=memory, interrupt_before=["tools"])
+
+# First invoke — runs until pause
+app.invoke({"messages": [...]}, config=config)
+
+# Inspect what's pending
+state = app.get_state(config)
+print(state.next)           # which node is next
+print(state.values)         # full current state
+
+# Resume — pass None to continue from pause
+app.invoke(None, config=config)
